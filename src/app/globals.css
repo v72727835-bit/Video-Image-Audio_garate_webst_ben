@@ -26,6 +26,16 @@
   --color-success: #34d399;
   --color-danger: #f87171;
 
+  /* vibrant data-viz / neon palette (ref: NOVA + Quantix) */
+  --color-cyan: #22d3ee;
+  --color-teal: #2dd4bf;
+  --color-pink: #f472b6;
+  --color-fuchsia: #e879f9;
+  --color-amber: #fbbf24;
+  --color-lime: #a3e635;
+  --color-sky: #38bdf8;
+  --color-rose: #fb7185;
+
   --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 
@@ -173,4 +183,57 @@ body {
   background: linear-gradient(90deg, #15121f 25%, #211c33 37%, #15121f 63%);
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
+}
+
+/* ---- Node graph / neon canvas (ref: NOVA) ---- */
+@layer utilities {
+  .neon-text {
+    text-shadow: 0 0 10px color-mix(in oklab, var(--color-brand) 60%, transparent);
+  }
+  .canvas-grid {
+    background-color: #06050d;
+    background-image:
+      linear-gradient(rgba(139, 92, 246, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 92, 246, 0.07) 1px, transparent 1px);
+    background-size: 34px 34px;
+  }
+  .node-card {
+    background: linear-gradient(180deg, rgba(23, 19, 36, 0.92), rgba(14, 12, 23, 0.92));
+    border: 1px solid rgba(139, 92, 246, 0.28);
+    border-radius: 0.9rem;
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.05),
+      0 14px 40px -18px rgba(139, 92, 246, 0.55);
+    backdrop-filter: blur(6px);
+  }
+  .node-active {
+    border-color: rgba(167, 139, 250, 0.9);
+    box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.5),
+      0 0 32px -4px rgba(139, 92, 246, 0.8);
+  }
+  .node-done {
+    border-color: rgba(45, 212, 191, 0.7);
+    box-shadow: 0 0 24px -6px rgba(45, 212, 191, 0.55);
+  }
+}
+
+@keyframes dashflow {
+  to { stroke-dashoffset: -26; }
+}
+@keyframes node-pop {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.animate-pulse-dot { animation: pulse-dot 1.1s ease-in-out infinite; }
+
+@keyframes bar-rise {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes draw-line {
+  from { stroke-dashoffset: var(--len, 1000); }
+  to { stroke-dashoffset: 0; }
 }

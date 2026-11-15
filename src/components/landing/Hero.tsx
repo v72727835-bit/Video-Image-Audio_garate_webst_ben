@@ -3,13 +3,26 @@
 import { motion } from "framer-motion";
 import { Sparkles, Play, Wand2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { GenerationGraph } from "@/components/studio/GenerationGraph";
+import type { Generation } from "@/store/slices/studioSlice";
 
-const previews = [
-  { src: "https://picsum.photos/seed/lumina-a/400/520", tag: "Cinematic" },
-  { src: "https://picsum.photos/seed/lumina-b/400/520", tag: "Product" },
-  { src: "https://picsum.photos/seed/lumina-c/400/520", tag: "Portrait" },
-  { src: "https://picsum.photos/seed/lumina-d/400/520", tag: "Anime" },
-];
+const grad = (a: string, b: string) =>
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='240'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='${a}'/><stop offset='1' stop-color='${b}'/></linearGradient></defs><rect width='400' height='240' fill='url(#g)'/><circle cx='110' cy='80' r='90' fill='#8b5cf6' opacity='0.45'/><circle cx='300' cy='180' r='80' fill='#22d3ee' opacity='0.3'/></svg>`
+  );
+
+const demoResult: Generation = {
+  _id: "demo",
+  kind: "video",
+  prompt: "A neon-lit Tokyo street at night, rain reflections, cinematic dolly shot",
+  status: "completed",
+  outputs: [grad("#2a1c5e", "#0a1a2e")],
+  thumbnail: grad("#3b1f6e", "#0a1a2e"),
+  createdAt: new Date().toISOString(),
+  mock: true,
+  creditsUsed: 96,
+};
 
 export function Hero() {
   return (
@@ -94,25 +107,8 @@ export function Hero() {
               </Button>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {previews.map((p, i) => (
-                <div
-                  key={p.tag}
-                  className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-line animate-float-slow"
-                  style={{ animationDelay: `${i * 0.6}s` }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.src}
-                    alt={p.tag}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent" />
-                  <span className="absolute bottom-2 left-2 rounded-md bg-black/50 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur">
-                    {p.tag}
-                  </span>
-                </div>
-              ))}
+            <div className="mt-4">
+              <GenerationGraph active={false} kind="video" prompt={demoResult.prompt} result={demoResult} />
             </div>
           </div>
 

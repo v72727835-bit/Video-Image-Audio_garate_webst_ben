@@ -11,6 +11,7 @@ import {
 } from "@/store/slices/studioSlice";
 import { setCredits } from "@/store/slices/authSlice";
 import { GenerationCard } from "./GenerationCard";
+import { GenerationGraph } from "@/components/studio/GenerationGraph";
 import { cn } from "@/lib/cn";
 
 const ratios = ["16:9", "1:1", "9:16", "4:3"];
@@ -57,6 +58,7 @@ export function PromptStudio({
     () => items.filter((i) => i.kind === kind),
     [items, kind]
   );
+  const latest = results[0] || null;
 
   const estimate =
     kind === "video" ? duration * 16 : 24;
@@ -171,17 +173,26 @@ export function PromptStudio({
         )}
       </div>
 
+      {/* Live generation pipeline */}
+      {(generating || latest) && (
+        <div>
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-faint">
+            Generation pipeline
+          </h2>
+          <GenerationGraph
+            active={generating}
+            kind={kind}
+            prompt={prompt || latest?.prompt || ""}
+            result={generating ? null : latest}
+          />
+        </div>
+      )}
+
       {/* Results */}
       <div>
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-faint">
           Recent {kind === "video" ? "videos" : "images"}
         </h2>
-
-        {generating && (
-          <div className="mb-5 grid gap-5 sm:grid-cols-2">
-            <div className="skeleton aspect-video rounded-2xl" />
-          </div>
-        )}
 
         {results.length === 0 && !generating ? (
           <EmptyState kind={kind} />

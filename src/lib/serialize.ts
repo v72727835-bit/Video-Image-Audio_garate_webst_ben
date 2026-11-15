@@ -11,6 +11,7 @@ export function toUserProfile(doc: any) {
     avatar: u.avatar || "",
     plan: u.plan,
     credits: u.credits,
+    planExpiry: (u as unknown as { planExpiry?: Date }).planExpiry?.toISOString() || null,
     createdAt: (u as unknown as { createdAt?: Date }).createdAt?.toISOString(),
   };
 }

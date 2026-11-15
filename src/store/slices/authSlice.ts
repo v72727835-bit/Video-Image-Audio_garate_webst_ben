@@ -7,6 +7,7 @@ export interface UserProfile {
   avatar?: string;
   plan: "free" | "starter" | "premium" | "business";
   credits: number;
+  planExpiry?: string | null;
   createdAt?: string;
 }
 

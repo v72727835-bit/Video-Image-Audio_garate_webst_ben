@@ -4,19 +4,39 @@ import { Logo } from "@/components/ui/Logo";
 const cols = [
   {
     title: "Product",
-    links: ["Features", "Tools", "Pricing", "Changelog"],
+    links: [
+      { label: "Features", href: "/page/features" },
+      { label: "Tools", href: "/page/tools" },
+      { label: "Pricing", href: "/page/pricing" },
+      { label: "Changelog", href: "/page/changelog" },
+    ],
   },
   {
     title: "Company",
-    links: ["About", "Careers", "Blog", "Contact"],
+    links: [
+      { label: "About", href: "/page/about" },
+      { label: "Careers", href: "/page/careers" },
+      { label: "Blog", href: "/page/blog" },
+      { label: "Contact", href: "/page/contact" },
+    ],
   },
   {
     title: "Resources",
-    links: ["Documentation", "Community", "Tutorials", "Status"],
+    links: [
+      { label: "Documentation", href: "/page/documentation" },
+      { label: "Community", href: "/page/community" },
+      { label: "Tutorials", href: "/page/tutorials" },
+      { label: "Status", href: "/page/status" },
+    ],
   },
   {
     title: "Legal",
-    links: ["Privacy", "Terms", "Content policy", "Licenses"],
+    links: [
+      { label: "Privacy", href: "/page/privacy" },
+      { label: "Terms", href: "/page/terms" },
+      { label: "Content policy", href: "/page/content-policy" },
+      { label: "Licenses", href: "/page/licenses" },
+    ],
   },
 ];
 
@@ -39,12 +59,9 @@ export function Footer() {
                 <h4 className="text-sm font-semibold text-ink">{c.title}</h4>
                 <ul className="mt-3 space-y-2">
                   {c.links.map((l) => (
-                    <li key={l}>
-                      <Link
-                        href="#"
-                        className="text-sm text-muted transition-colors hover:text-ink"
-                      >
-                        {l}
+                    <li key={l.label}>
+                      <Link href={l.href} className="text-sm text-muted transition-colors hover:text-ink">
+                        {l.label}
                       </Link>
                     </li>
                   ))}
@@ -56,7 +73,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-6 sm:flex-row">
           <p className="text-xs text-faint">
-            © {new Date().getFullYear()} Lumina Studio. All rights reserved.
+            © {new Date().getFullYear()} aivideocreat. All rights reserved.
           </p>
           <p className="text-xs text-faint">
             Crafted for creators · Video, image &amp; audio generation

@@ -21,6 +21,7 @@ const userSchema = new Schema(
     role: { type: String, enum: ["user", "admin"], default: "user" },
     status: { type: String, enum: ["active", "suspended"], default: "active" },
     credits: { type: Number, default: 150 },
+    planExpiry: { type: Date, default: null },
   },
   { timestamps: true }
 );

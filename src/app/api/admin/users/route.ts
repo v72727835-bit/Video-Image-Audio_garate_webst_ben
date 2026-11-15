@@ -50,6 +50,7 @@ export async function GET(req: Request) {
         credits: u.credits,
         renders: use.renders,
         usedCredits: use.creditsUsed,
+        planExpiry: (u as unknown as { planExpiry?: Date }).planExpiry?.toISOString() || null,
         createdAt: (u as unknown as { createdAt?: Date }).createdAt?.toISOString(),
       };
     });

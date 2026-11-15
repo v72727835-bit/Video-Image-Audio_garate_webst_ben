@@ -26,6 +26,7 @@ interface AdminUser {
   credits: number;
   renders: number;
   usedCredits: number;
+  planExpiry?: string | null;
   createdAt?: string;
 }
 
@@ -140,6 +141,12 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-5 py-3.5">
                       <span className={cn("rounded-md px-2 py-0.5 text-xs capitalize", planTone[u.plan])}>{u.plan}</span>
+                      {u.plan !== "free" && u.planExpiry && (
+                        <div className={cn("mt-1 text-[11px]", new Date(u.planExpiry) < new Date() ? "text-danger" : "text-faint")}>
+                          {new Date(u.planExpiry) < new Date() ? "expired " : "till "}
+                          {new Date(u.planExpiry).toLocaleDateString()}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 text-ink-soft">{u.credits.toLocaleString()}</td>
                     <td className="px-5 py-3.5">
@@ -205,6 +212,11 @@ export default function AdminUsers() {
                   <span className="rounded-md bg-amber/15 px-2 py-0.5 text-amber">{u.credits.toLocaleString()} cr</span>
                   {u.role === "admin" && <span className="rounded-md bg-brand/15 px-2 py-0.5 text-brand-light">admin</span>}
                   <span className={cn("rounded-md px-2 py-0.5", u.status === "suspended" ? "bg-danger/15 text-danger" : "bg-teal/15 text-teal")}>{u.status}</span>
+                  {u.plan !== "free" && u.planExpiry && (
+                    <span className={cn("rounded-md px-2 py-0.5", new Date(u.planExpiry) < new Date() ? "bg-danger/15 text-danger" : "bg-white/[0.03] text-faint")}>
+                      {new Date(u.planExpiry) < new Date() ? "expired" : "till " + new Date(u.planExpiry).toLocaleDateString()}
+                    </span>
+                  )}
                   <button onClick={() => setUsageUser(u)} className="rounded-md bg-white/[0.03] px-2 py-0.5 text-ink-soft">{u.renders} renders</button>
                 </div>
               </div>

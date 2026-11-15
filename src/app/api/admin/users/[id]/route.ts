@@ -25,6 +25,12 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     if (["free", "starter", "premium", "business"].includes(body.plan)) {
       user.plan = body.plan;
       changes.push(`plan=${body.plan}`);
+      // keep the subscription window sane when an admin changes the plan by hand
+      if (body.plan === "free") {
+        user.planExpiry = null;
+      } else if (!user.planExpiry || new Date(user.planExpiry) < new Date()) {
+        user.planExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      }
     }
     if (["user", "admin"].includes(body.role)) {
       user.role = body.role;

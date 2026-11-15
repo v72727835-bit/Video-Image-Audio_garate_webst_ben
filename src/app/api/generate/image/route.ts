@@ -5,6 +5,7 @@ import { Generation } from "@/models/Generation";
 import { getSession } from "@/lib/auth";
 import { generateImage } from "@/lib/leonardo";
 import { getLeonardoKey } from "@/lib/leonardoKey";
+import { isPlanActive } from "@/lib/subscription";
 import { toGeneration } from "@/lib/serialize";
 
 export const maxDuration = 120;
@@ -27,6 +28,12 @@ export async function POST(req: Request) {
     await connectDB();
     const user = await User.findById(session.id);
     if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+    if (!isPlanActive(user)) {
+      return NextResponse.json(
+        { error: "Your plan has expired. Please renew a plan to keep generating.", code: "plan_expired" },
+        { status: 402 }
+      );
+    }
     if (user.credits < 20) {
       return NextResponse.json(
         { error: "Not enough credits. Top up to continue creating." },

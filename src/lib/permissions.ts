@@ -4,6 +4,8 @@ export const PERMISSIONS = [
   { key: "users", label: "Users", desc: "View, edit, suspend and delete users" },
   { key: "content", label: "Content", desc: "Review and remove any creation" },
   { key: "plans", label: "Plans & credits", desc: "Manage subscription tiers and packs" },
+  { key: "payments", label: "Payments", desc: "View subscriptions and transactions" },
+  { key: "pages", label: "Pages (CMS)", desc: "Edit public website pages" },
   { key: "apikeys", label: "API keys", desc: "Add and rotate provider API keys" },
   { key: "activity", label: "Activity log", desc: "View the audit trail" },
   { key: "settings", label: "Settings", desc: "Change platform-wide settings" },

@@ -7,6 +7,8 @@ import { logActivity } from "@/lib/activity";
 // Keys the panel can manage.
 const KEYS = [
   { key: "LEONARDO_API_KEY", label: "Leonardo.ai", hint: "Enables real image & video generation" },
+  { key: "RAZORPAY_KEY_ID", label: "Razorpay Key ID", hint: "Public key id for checkout (rzp_live_… / rzp_test_…)" },
+  { key: "RAZORPAY_KEY_SECRET", label: "Razorpay Key Secret", hint: "Secret used to create orders and verify payments" },
 ];
 
 function mask(v: string) {

@@ -24,7 +24,7 @@ export function Logo({
       </span>
       {!compact && (
         <span className="font-display text-[1.15rem] font-bold tracking-tight text-ink">
-          Lumina<span className="text-brand-light">Studio</span>
+          aivideo<span className="text-brand-light">creat</span>
         </span>
       )}
     </Link>

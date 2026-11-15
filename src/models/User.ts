@@ -18,6 +18,8 @@ const userSchema = new Schema(
       enum: ["free", "starter", "premium", "business"],
       default: "free",
     },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
+    status: { type: String, enum: ["active", "suspended"], default: "active" },
     credits: { type: Number, default: 150 },
   },
   { timestamps: true }

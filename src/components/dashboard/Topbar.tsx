@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Menu, Zap, LogOut, User as UserIcon, ChevronDown } from "lucide-react";
+import { Menu, Zap, LogOut, User as UserIcon, ChevronDown, Search, Bell } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutUser } from "@/store/slices/authSlice";
 
@@ -36,7 +36,25 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         <Menu className="h-5 w-5" />
       </button>
 
-      <div className="flex-1" />
+      {/* Search */}
+      <div className="relative hidden flex-1 max-w-md sm:block">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
+        <input
+          placeholder="Search creations, characters, assets…"
+          className="h-10 w-full rounded-xl border border-line bg-surface/60 pl-10 pr-16 text-sm text-ink placeholder:text-faint outline-none transition-colors focus:border-brand/50 focus:ring-2 focus:ring-brand/15"
+        />
+        <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md border border-line bg-base px-1.5 py-0.5 text-[10px] text-faint">
+          ⌘K
+        </kbd>
+      </div>
+
+      <div className="flex-1 sm:hidden" />
+
+      {/* Notifications */}
+      <button className="relative hidden rounded-xl border border-line bg-surface p-2.5 text-ink-soft transition-colors hover:border-brand/40 sm:block">
+        <Bell className="h-4 w-4" />
+        <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-pink ring-2 ring-base" />
+      </button>
 
       {/* Credits */}
       <Link

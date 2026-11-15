@@ -1,9 +1,9 @@
 /**
  * Leonardo.ai API client.
  *
- * Supports real image + video (Motion) generation when LEONARDO_API_KEY is set,
- * and falls back to a clearly-labelled MOCK mode when it is not — so the panel
- * is fully demo-able before credentials are wired in.
+ * Supports real image + video (Motion) generation when an API key is provided
+ * (from the admin panel / env), and falls back to a clearly-labelled MOCK mode
+ * when it is not — so the panel is fully demo-able before credentials are wired.
  *
  * NOTE: Leonardo's video/motion params evolve (Motion 2.0 / Seedance). The
  * request bodies below follow the v1 REST shape; confirm against the current
@@ -11,22 +11,29 @@
  */
 
 const API_BASE = "https://cloud.leonardo.ai/api/rest/v1";
-const API_KEY = process.env.LEONARDO_API_KEY || "";
 
-export const leonardoEnabled = Boolean(API_KEY);
-
-const headers = {
-  accept: "application/json",
-  "content-type": "application/json",
-  authorization: `Bearer ${API_KEY}`,
-};
+function authHeaders(apiKey: string) {
+  return {
+    accept: "application/json",
+    "content-type": "application/json",
+    authorization: `Bearer ${apiKey}`,
+  };
+}
 
 export interface GenImageOptions {
   prompt: string;
+  apiKey?: string;
   width?: number;
   height?: number;
   numImages?: number;
   modelId?: string;
+}
+
+export interface GenVideoOptions {
+  prompt: string;
+  apiKey?: string;
+  duration?: number; // seconds
+  aspectRatio?: string;
 }
 
 export interface GenResult {
@@ -40,8 +47,8 @@ export interface GenResult {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /* ---------------- MOCK helpers (no API key) ----------------
-   Generates self-contained gradient artwork as SVG data URIs so the panel
-   renders real tiles even offline / before a Leonardo key is added. */
+   Self-contained gradient artwork as SVG data URIs so the panel renders real
+   tiles even offline / before a Leonardo key is added. */
 
 function hashSeed(s: string): number {
   let h = 0;
@@ -70,7 +77,7 @@ function gradientDataUri(seed: string, w = 768, h = 768): string {
 </defs>
 <rect width='${w}' height='${h}' fill='url(#g)'/>
 <rect width='${w}' height='${h}' fill='url(#r)'/>
-<circle cx='${(n % w)}' cy='${(n >> 5) % h}' r='${60 + (n % 120)}' fill='hsl(${hue3},80%,60%)' opacity='0.18'/>
+<circle cx='${n % w}' cy='${(n >> 5) % h}' r='${60 + (n % 120)}' fill='hsl(${hue3},80%,60%)' opacity='0.18'/>
 <circle cx='${(n >> 7) % w}' cy='${(n >> 2) % h}' r='${40 + (n % 90)}' fill='hsl(${hue1},80%,70%)' opacity='0.14'/>
 </svg>`;
   return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
@@ -80,16 +87,15 @@ function mockImages(seed: string, n: number, w = 768, h = 768): string[] {
   return Array.from({ length: n }).map((_, i) => gradientDataUri(seed + i, w, h));
 }
 
-// A tiny, self-contained sample clip (data URI) used only in demo mode.
 const SAMPLE_VIDEO =
   "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
 /* ---------------- Image generation ---------------- */
 
 export async function generateImage(opts: GenImageOptions): Promise<GenResult> {
-  const { prompt, width = 768, height = 768, numImages = 4 } = opts;
+  const { prompt, width = 768, height = 768, numImages = 4, apiKey = "" } = opts;
 
-  if (!leonardoEnabled) {
+  if (!apiKey) {
     await sleep(1400);
     const outputs = mockImages(prompt + Date.now(), numImages);
     return {
@@ -101,6 +107,7 @@ export async function generateImage(opts: GenImageOptions): Promise<GenResult> {
     };
   }
 
+  const headers = authHeaders(apiKey);
   const createRes = await fetch(`${API_BASE}/generations`, {
     method: "POST",
     headers,
@@ -109,36 +116,26 @@ export async function generateImage(opts: GenImageOptions): Promise<GenResult> {
       width,
       height,
       num_images: numImages,
-      modelId: opts.modelId || "b24e16ff-06e3-43eb-8d33-4416c2d75876", // Leonardo Lightning XL
+      modelId: opts.modelId || "b24e16ff-06e3-43eb-8d33-4416c2d75876",
     }),
   });
   const created = await createRes.json();
-  if (!createRes.ok) {
-    throw new Error(created?.error || "Leonardo image request failed");
-  }
+  if (!createRes.ok) throw new Error(created?.error || "Leonardo image request failed");
   const jobId: string = created?.sdGenerationJob?.generationId;
   const cost: number = created?.sdGenerationJob?.apiCreditCost ?? numImages * 6;
 
-  const outputs = await pollImages(jobId);
-  return {
-    outputs,
-    thumbnail: outputs[0] || "",
-    providerJobId: jobId,
-    creditsUsed: cost,
-    mock: false,
-  };
+  const outputs = await pollImages(jobId, headers);
+  return { outputs, thumbnail: outputs[0] || "", providerJobId: jobId, creditsUsed: cost, mock: false };
 }
 
-async function pollImages(jobId: string, tries = 20): Promise<string[]> {
+async function pollImages(jobId: string, headers: Record<string, string>, tries = 20): Promise<string[]> {
   for (let i = 0; i < tries; i++) {
     await sleep(3000);
     const res = await fetch(`${API_BASE}/generations/${jobId}`, { headers });
     const data = await res.json();
     const gen = data?.generations_by_pk;
     if (gen?.status === "COMPLETE") {
-      return (gen.generated_images || []).map(
-        (img: { url: string }) => img.url
-      );
+      return (gen.generated_images || []).map((img: { url: string }) => img.url);
     }
     if (gen?.status === "FAILED") throw new Error("Generation failed on Leonardo");
   }
@@ -147,16 +144,10 @@ async function pollImages(jobId: string, tries = 20): Promise<string[]> {
 
 /* ---------------- Video generation (Motion / text-to-video) ---------------- */
 
-export interface GenVideoOptions {
-  prompt: string;
-  duration?: number; // seconds
-  aspectRatio?: string;
-}
-
 export async function generateVideo(opts: GenVideoOptions): Promise<GenResult> {
-  const { prompt, duration = 5 } = opts;
+  const { prompt, duration = 5, apiKey = "" } = opts;
 
-  if (!leonardoEnabled) {
+  if (!apiKey) {
     await sleep(2200);
     return {
       outputs: [SAMPLE_VIDEO],
@@ -167,44 +158,32 @@ export async function generateVideo(opts: GenVideoOptions): Promise<GenResult> {
     };
   }
 
-  // Real text-to-video (Motion). Endpoint/params should be confirmed against
-  // current Leonardo docs for Motion 2.0 / Seedance before production use.
+  const headers = authHeaders(apiKey);
   const createRes = await fetch(`${API_BASE}/generations-text-to-video`, {
     method: "POST",
     headers,
     body: JSON.stringify({ prompt, duration }),
   });
   const created = await createRes.json();
-  if (!createRes.ok) {
-    throw new Error(created?.error || "Leonardo video request failed");
-  }
+  if (!createRes.ok) throw new Error(created?.error || "Leonardo video request failed");
   const jobId: string =
-    created?.motionVideoGenerationJob?.generationId ||
-    created?.sdGenerationJob?.generationId;
-  const cost: number =
-    created?.motionVideoGenerationJob?.apiCreditCost ?? duration * 40;
+    created?.motionVideoGenerationJob?.generationId || created?.sdGenerationJob?.generationId;
+  const cost: number = created?.motionVideoGenerationJob?.apiCreditCost ?? duration * 40;
 
-  const outputs = await pollVideo(jobId);
-  return {
-    outputs,
-    thumbnail: "",
-    providerJobId: jobId,
-    creditsUsed: cost,
-    mock: false,
-  };
+  const outputs = await pollVideo(jobId, headers);
+  return { outputs, thumbnail: "", providerJobId: jobId, creditsUsed: cost, mock: false };
 }
 
-async function pollVideo(jobId: string, tries = 40): Promise<string[]> {
+async function pollVideo(jobId: string, headers: Record<string, string>, tries = 40): Promise<string[]> {
   for (let i = 0; i < tries; i++) {
     await sleep(4000);
     const res = await fetch(`${API_BASE}/generations/${jobId}`, { headers });
     const data = await res.json();
     const gen = data?.generations_by_pk;
     if (gen?.status === "COMPLETE") {
-      const vids = (gen.generated_images || [])
+      return (gen.generated_images || [])
         .map((img: { motionMP4URL?: string; url?: string }) => img.motionMP4URL || img.url)
         .filter(Boolean);
-      return vids;
     }
     if (gen?.status === "FAILED") throw new Error("Video generation failed");
   }

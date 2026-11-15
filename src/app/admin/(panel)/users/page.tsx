@@ -10,6 +10,9 @@ import {
   ShieldCheck,
   Check,
   AlertTriangle,
+  Film,
+  ImageIcon,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -21,6 +24,8 @@ interface AdminUser {
   role: string;
   status: string;
   credits: number;
+  renders: number;
+  usedCredits: number;
   createdAt?: string;
 }
 
@@ -39,6 +44,7 @@ export default function AdminUsers() {
   const [plan, setPlan] = useState("all");
   const [editing, setEditing] = useState<AdminUser | null>(null);
   const [confirmDel, setConfirmDel] = useState<AdminUser | null>(null);
+  const [usageUser, setUsageUser] = useState<AdminUser | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,6 +118,7 @@ export default function AdminUsers() {
                   <th className="px-5 py-3.5 font-medium">User</th>
                   <th className="px-5 py-3.5 font-medium">Plan</th>
                   <th className="px-5 py-3.5 font-medium">Credits</th>
+                  <th className="px-5 py-3.5 font-medium">Usage</th>
                   <th className="px-5 py-3.5 font-medium">Role</th>
                   <th className="px-5 py-3.5 font-medium">Status</th>
                   <th className="px-5 py-3.5 text-right font-medium">Actions</th>
@@ -135,6 +142,13 @@ export default function AdminUsers() {
                       <span className={cn("rounded-md px-2 py-0.5 text-xs capitalize", planTone[u.plan])}>{u.plan}</span>
                     </td>
                     <td className="px-5 py-3.5 text-ink-soft">{u.credits.toLocaleString()}</td>
+                    <td className="px-5 py-3.5">
+                      <button onClick={() => setUsageUser(u)} className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.03] px-2 py-1 text-xs text-ink-soft hover:text-brand-light">
+                        <Film className="h-3 w-3" /> {u.renders}
+                        <span className="text-faint">·</span>
+                        <Zap className="h-3 w-3 text-accent" /> {u.usedCredits.toLocaleString()}
+                      </button>
+                    </td>
                     <td className="px-5 py-3.5">
                       {u.role === "admin" ? (
                         <span className="inline-flex items-center gap-1 rounded-md bg-brand/15 px-2 py-0.5 text-xs text-brand-light">
@@ -191,6 +205,7 @@ export default function AdminUsers() {
                   <span className="rounded-md bg-amber/15 px-2 py-0.5 text-amber">{u.credits.toLocaleString()} cr</span>
                   {u.role === "admin" && <span className="rounded-md bg-brand/15 px-2 py-0.5 text-brand-light">admin</span>}
                   <span className={cn("rounded-md px-2 py-0.5", u.status === "suspended" ? "bg-danger/15 text-danger" : "bg-teal/15 text-teal")}>{u.status}</span>
+                  <button onClick={() => setUsageUser(u)} className="rounded-md bg-white/[0.03] px-2 py-0.5 text-ink-soft">{u.renders} renders</button>
                 </div>
               </div>
             ))}
@@ -229,6 +244,73 @@ export default function AdminUsers() {
           </div>
         </Modal>
       )}
+
+      {usageUser && <UsageModal user={usageUser} onClose={() => setUsageUser(null)} />}
+    </div>
+  );
+}
+
+interface UGen {
+  _id: string;
+  kind: string;
+  prompt: string;
+  thumbnail?: string;
+  outputs: string[];
+  creditsUsed?: number;
+  createdAt?: string;
+}
+
+function UsageModal({ user, onClose }: { user: AdminUser; onClose: () => void }) {
+  const [gens, setGens] = useState<UGen[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/admin/generations?user=${user.id}`)
+      .then((r) => r.json())
+      .then((d) => setGens(d.items || []))
+      .finally(() => setLoading(false));
+  }, [user.id]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-line bg-elevated p-6 shadow-2xl">
+        <button onClick={onClose} className="absolute right-4 top-4 text-faint hover:text-ink"><X className="h-4 w-4" /></button>
+        <h3 className="font-display text-lg font-semibold text-ink">{user.name}&apos;s usage</h3>
+        <p className="text-xs text-muted">{user.email}</p>
+
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          <Stat icon={<Film className="h-4 w-4" />} label="Renders" value={user.renders} />
+          <Stat icon={<Zap className="h-4 w-4 text-accent" />} label="Credits used" value={user.usedCredits} />
+          <Stat icon={<ImageIcon className="h-4 w-4" />} label="Credits left" value={user.credits} />
+        </div>
+
+        <h4 className="mt-5 mb-3 text-sm font-semibold uppercase tracking-wider text-faint">Recent creations</h4>
+        {loading ? (
+          <div className="flex h-24 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-brand-light" /></div>
+        ) : gens.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted">No creations yet.</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+            {gens.map((g) => (
+              <div key={g._id} className="overflow-hidden rounded-lg border border-line">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={g.thumbnail || g.outputs[0]} alt={g.prompt} className="aspect-square w-full object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-line bg-base/40 p-3 text-center">
+      <div className="mb-1 flex justify-center text-brand-light">{icon}</div>
+      <p className="font-display text-lg font-bold text-ink">{value.toLocaleString()}</p>
+      <p className="text-[11px] text-faint">{label}</p>
     </div>
   );
 }

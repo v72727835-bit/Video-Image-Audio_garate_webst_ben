@@ -4,6 +4,7 @@ import { User } from "@/models/User";
 import { Generation } from "@/models/Generation";
 import { getSession } from "@/lib/auth";
 import { generateImage } from "@/lib/leonardo";
+import { getLeonardoKey } from "@/lib/leonardoKey";
 import { toGeneration } from "@/lib/serialize";
 
 export const maxDuration = 120;
@@ -34,7 +35,8 @@ export async function POST(req: Request) {
     }
 
     const [w, h] = dimsFor(aspectRatio);
-    const result = await generateImage({ prompt, width: w, height: h, numImages: 4 });
+    const apiKey = await getLeonardoKey();
+    const result = await generateImage({ prompt, width: w, height: h, numImages: 4, apiKey });
 
     user.credits = Math.max(0, user.credits - result.creditsUsed);
     await user.save();

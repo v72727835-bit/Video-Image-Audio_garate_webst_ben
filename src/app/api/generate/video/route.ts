@@ -4,6 +4,7 @@ import { User } from "@/models/User";
 import { Generation } from "@/models/Generation";
 import { getSession } from "@/lib/auth";
 import { generateVideo } from "@/lib/leonardo";
+import { getLeonardoKey } from "@/lib/leonardoKey";
 import { toGeneration } from "@/lib/serialize";
 
 export const maxDuration = 300;
@@ -36,7 +37,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = await generateVideo({ prompt, duration: dur, aspectRatio });
+    const apiKey = await getLeonardoKey();
+    const result = await generateVideo({ prompt, duration: dur, aspectRatio, apiKey });
 
     user.credits = Math.max(0, user.credits - result.creditsUsed);
     await user.save();
